@@ -1,0 +1,7 @@
+nose
+sphinx
+biopython
+editdistance
+statistics
+numpy
+
