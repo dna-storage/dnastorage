@@ -20,7 +20,7 @@ As documentation for the softwarwe becomes available, it will be placed under th
 # System Requirements
 
 ## Hardware Requirements
-DORIS requires only a standard computer with enough RAM and compute power to support the needed operations.
+The dnastorage module requires only a standard computer with enough RAM and compute power to support the needed operations. However, encoding or decoding large files may perform poorly, necessitating a more capable system.
 
 ## Software Requirements
 ### OS Requirements
