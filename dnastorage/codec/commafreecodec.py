@@ -1,7 +1,7 @@
 from random import randint
 import editdistance as ed
 
-from dnastorage.codec.base import BaseCodec
+from dnastorage.codec.base_codec import BaseCodec
 from dnastorage.codec import base_conversion
 from dnastorage.util.stats import stats
 import dnastorage.exceptions as err
