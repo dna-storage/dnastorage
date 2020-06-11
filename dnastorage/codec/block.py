@@ -1,8 +1,10 @@
-from dnastorage.codec.base import *
 from math import log, ceil
+from collections import Counter
+
+from dnastorage.codec.base_codec import *
 from dnastorage.codec import base_conversion
 from dnastorage.codec.reedsolomon.rs import ReedSolomon,get_reed_solomon,ReedSolomonError
-from collections import Counter
+from dnastorage.util.stats import stats
 
 import logging
 logger = logging.getLogger('dna.storage.codec.block')

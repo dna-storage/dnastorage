@@ -1,8 +1,13 @@
-from dnastorage.codec.phys import CombineCodewords
-from dnastorage.codec.block import *
-from dnastorage.codec.codecfile import *
 from random import randint
 from math import ceil,log
+
+import dnastorage.exceptions as err
+from dnastorage.codec.codecfile import EncodePacketizedFile, DecodePacketizedFile
+from dnastorage.codec.phys import CombineCodewords
+from dnastorage.codec.block import doMajorityVote, partitionStrandsIntoBlocks
+from dnastorage.codec.block import reportBlockStatus
+
+from dnastorage.util.stats import stats
 
 class LayeredEncoder(EncodePacketizedFile):
 
@@ -118,13 +123,13 @@ class LayeredDecoder(DecodePacketizedFile):
         try:
             phys_s = self.physCodec.decode(phys_strand)
             cw_s = self.physToStrandCodec.decode(phys_s)
-        except DNAStorageError as p:
+        except err.DNAStorageError as p:
             cw_s = [-1] + [ 0 for _ in range(self.strandSizeInBytes-1) ]
             return cw_s
         
         try:
             s = self.strandCodec.decode(cw_s)
-        except DNAStorageError as p:
+        except err.DNAStorageError as p:
             s = [-1] + [ 0 for _ in range(self.strandSizeInBytes-1) ]
         
         return s
@@ -137,10 +142,10 @@ class LayeredDecoder(DecodePacketizedFile):
             try:            
                 s = self._layered_decode_phys_to_strand(phys_strand)
                 self.all_strands.append(s)
-            except DNAMissingPrimer as p:
+            except err.DNAMissingPrimer as p:
                 # just ignore strands that don't have a required primer
                 pass
-            except DNAStorageError as e:
+            except err.DNAStorageError as e:
                 if self._Policy.allow(e):
                     pass
                 else:
@@ -181,7 +186,7 @@ class LayeredDecoder(DecodePacketizedFile):
                 #print "attempt",b_noecc[0],len(b_noecc[1])
                 self.writeToFile(b_noecc[0],b_noecc[1])
 
-            except DNAStorageError as e:
+            except err.DNAStorageError as e:
                 if self._Policy.allow(e):
                     continue                
                 else:
@@ -202,7 +207,7 @@ class LayeredDecoder(DecodePacketizedFile):
 if __name__ == "__main__":
     from dnastorage.codec.rscodec import ReedSolomonOuterCodec
     from dnastorage.codec.strand import ReedSolomonInnerCodec
-    from dnastorage.exceptions import *
+    from dnastorage.exceptions import NoTolerance
     from dnastorage.codec.commafreecodec import *
     from dnastorage.codec.phys import *
     

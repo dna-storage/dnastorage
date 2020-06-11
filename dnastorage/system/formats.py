@@ -1,6 +1,6 @@
+from dnastorage.exceptions import NoTolerance, AllowAll
 from dnastorage.codec import commafreecodec
 from dnastorage.codec.builder import customize_RS_CFC8
-from dnastorage.exceptions import *
 
 def ENC_FSMD_200(pf, primer5, primer3, bIndex=0, policy=NoTolerance(),withCut=None):
     enc = customize_RS_CFC8(True,pf,primer5,primer3,1,0,2,15,90,policy,withCut=withCut,outerECCStrands=20,minIndex=bIndex)

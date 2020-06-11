@@ -1,9 +1,10 @@
-from dnastorage.codec.base import *
-from dnastorage.codec import base_conversion
 from random import randint
 import editdistance as ed
 
+from dnastorage.codec.base import BaseCodec
+from dnastorage.codec import base_conversion
 from dnastorage.util.stats import stats
+import dnastorage.exceptions as err
 
 #In this order, no codewords have a hamming distance
 #smaller than 2, and only two consecutive codewords have a hamming
@@ -152,8 +153,8 @@ class CommaFreeCodewords(BaseCodec):
                 #print i,"->",exact[i]
                 i += 8
             else:
-                err = DNABadCodeword("Missing expected CFC8 symbol")
-                if self._Policy.allow(err):
+                e = err.DNABadCodeword("Missing expected CFC8 symbol")
+                if self._Policy.allow(e):
                     j = self.get_next_exact(i,exact)
                     skipped = int(round((j-i)/8.0))
                     i_tmp = i
@@ -168,19 +169,19 @@ class CommaFreeCodewords(BaseCodec):
                             new_strand.append(-1)
                     i = j
                 else:
-                    raise err
+                    raise e
         
         if len(new_strand) != numSyms:
-            err = DNAStrandPayloadWrongSize("Payload wrong size in CFC8")
+            e = err.DNAStrandPayloadWrongSize("Payload wrong size in CFC8")
             stats.inc("CFC8:payloadWrongSize")
-            if self._Policy.allow(err):            
+            if self._Policy.allow(e):            
                 if len(new_strand) < numSyms:
                     while len(new_strand) < numSyms:
                         new_strand.append(-1)
                 else:
                     new_strand = new_strand[0:numSyms]
             else:
-                raise err
+                raise e
 
 
         cnt=0

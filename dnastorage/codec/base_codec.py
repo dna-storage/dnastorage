@@ -1,7 +1,7 @@
-from dnastorage.codec.base_conversion import convertIntToBytes,convertBytesToInt
-from dnastorage.exceptions import *
+from dnastorage.exceptions import AllowAll
 
 class BaseCodec(object):
+    ''' Abstract Codec object to inherit to make other codecs '''
     def __init__(self,CodecObj=None,Policy=None):
         self._Obj = CodecObj
         if Policy is None:

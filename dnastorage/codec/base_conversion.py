@@ -1,6 +1,3 @@
-from copy import copy
-from random import *
-
 bases = ['A', 'C', 'G', 'T']
 
 values = { 'A' : 0 ,

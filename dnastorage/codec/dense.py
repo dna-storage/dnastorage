@@ -1,7 +1,5 @@
-#!/usr/bin/python
-from dnastorage.codec.base import *
-from dnastorage.codec import base_conversion
 import random
+from dnastorage.codec.base_codec import BaseCodec
 
 dense_enc_table = [
 'AAAA','AAAC','AAAT','AAAG','AACA','AACC','AACT','AACG',

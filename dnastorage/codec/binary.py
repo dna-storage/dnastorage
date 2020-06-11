@@ -1,6 +1,5 @@
-#!/usr/bin/python
-from dnastorage.codec.base import *
-from dnastorage.codec.base_conversion import *
+from dnastorage.codec.base_codec import BaseCodec
+from dnastorage.codec.base_conversion import convertBase, convertFromBase
 
 def binary_encode(packet):
     array = bytearray(packet)

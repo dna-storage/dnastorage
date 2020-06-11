@@ -1,10 +1,8 @@
 import random
 import editdistance as ed
 
-from dnastorage.codec.base import *
-#from dnastorage.primer.primer_util import *
-from dnastorage.exceptions import *
-
+import dnastorage.exceptions as err
+from dnastorage.codec.base_codec import BaseCodec
 
 class CombineCodewords(BaseCodec):
     def __init__(self,CodecObj=None,Policy=None):
@@ -24,7 +22,7 @@ class NormalizeStrandLength(BaseCodec):
         
     def _encode(self, phys_s):
         if len(phys_s) > self.length:
-            e = DNAStrandPayloadWrongSize("NormalizeStrandLength: Strand is too long ({})".format(len(phys_s)))
+            e = err.DNAStrandPayloadWrongSize("NormalizeStrandLength: Strand is too long ({})".format(len(phys_s)))
             if self._Policy.allow(e):
                 pass
             else:
@@ -46,12 +44,12 @@ class InsertMidSequence(BaseCodec):
 
     def _encode(self,strand):
         if strand.find(self._seq) != -1:
-            err = DNAStrandPoorlyFormed("Found sequence already present while prepending {}"\
+            e = err.DNAStrandPoorlyFormed("Found sequence already present while prepending {}"\
                                         .format(self._seq))
-            if self._Policy.allow(err):
+            if self._Policy.allow(e):
                 pass
             else:
-                raise err
+                raise e
 
         middle = int(len(strand)/2)
         return strand[0:middle]+self._seq+strand[middle:]
@@ -61,10 +59,10 @@ class InsertMidSequence(BaseCodec):
         if index != -1:
             return strand[0:index]+strand[index+len(self._seq):]
         else:
-            err = DNAStrandMissingSequence("{} should have had {} inside it.".format(strand,self._seq))
+            er = err.DNAStrandMissingSequence("{} should have had {} inside it.".format(strand,self._seq))
             # there could be errors in the cut preventing us from seeing it
             # with an exact match, so now we look for an inexact match
-            if self._Policy.allow(err):
+            if self._Policy.allow(er):
                 middle = int(len(strand)/2)
                 slen = len(self._seq)
                 res = []
@@ -80,7 +78,7 @@ class InsertMidSequence(BaseCodec):
                     # still be extracted properly
                     return strand
             else:
-                raise err
+                raise er
 
 
 class PrependSequence(BaseCodec):
@@ -91,12 +89,12 @@ class PrependSequence(BaseCodec):
 
     def _encode(self,strand):
         if strand.find(self._seq) != -1:
-            err = DNAStrandPoorlyFormed("Found sequence already present while prepending {}"\
+            er = err.DNAStrandPoorlyFormed("Found sequence already present while prepending {}"\
                                         .format(self._seq))
-            if self._Policy.allow(err):
+            if self._Policy.allow(er):
                 pass
             else:
-                raise err
+                raise er
         return self._seq + strand
 
     def _decode(self,strand):
@@ -104,10 +102,10 @@ class PrependSequence(BaseCodec):
         if index != -1: # expected at beginning
             return strand[index+len(self._seq):]
         else:
-            err = DNAStrandMissingSequence("{} should have had {} at beginning.".format(strand,self._seq))
+            er = err.DNAStrandMissingSequence("{} should have had {} at beginning.".format(strand,self._seq))
             # there could be errors in the cut preventing us from seeing it
             # with an exact match, so now we look for an inexact match
-            if self._Policy.allow(err):
+            if self._Policy.allow(er):
                 slen = len(self._seq)
                 res = []
                 # FIXME: how far in should we look?
@@ -122,12 +120,12 @@ class PrependSequence(BaseCodec):
                     return strand[idx+slen:]
                 else:
                     if self.is_primer:
-                        raise DNAMissingPrimer("Missing primer {}".format(self._seq))
+                        raise err.DNAMissingPrimer("Missing primer {}".format(self._seq))
                     # just leave the strand along, and hopefully codewords can
                     # still be extracted properly
                     return strand
             else:
-                raise err
+                raise er
 
 
 class AppendSequence(BaseCodec):
@@ -138,12 +136,12 @@ class AppendSequence(BaseCodec):
 
     def _encode(self,strand):
         if strand.find(self._seq) != -1:
-            err = DNAStrandPoorlyFormed("Found sequence already present while appending {}"\
+            er = err.DNAStrandPoorlyFormed("Found sequence already present while appending {}"\
                                         .format(self._seq))
-            if self._Policy.allow(err):
+            if self._Policy.allow(er):
                 pass
             else:
-                raise err
+                raise er
         
         return strand + self._seq
 
@@ -153,10 +151,10 @@ class AppendSequence(BaseCodec):
         if index != -1: # expected at end
             return strand[:index]
         else:
-            err = DNAStrandMissingSequence("{} should have had {} at end.".format(strand,self._seq))
+            er = err.DNAStrandMissingSequence("{} should have had {} at end.".format(strand,self._seq))
             # there could be errors in the cut preventing us from seeing it
             # with an exact match, so now we look for an inexact match
-            if self._Policy.allow(err):
+            if self._Policy.allow(er):
                 slen = len(self._seq)
                 res = []
                 for m in range(len(strand)-2*slen,len(strand)):
@@ -168,12 +166,12 @@ class AppendSequence(BaseCodec):
                     return strand[:idx+len(strand)-2*slen]
                 else:
                     if self.is_primer:
-                        raise DNAMissingPrimer("Missing primer".format(self._seq))
+                        raise err.DNAMissingPrimer("Missing primer".format(self._seq))
                     # just leave the strand along, and hopefully codewords can
                     # still be extracted properly
                     return strand
             else:
-                raise err
+                raise er
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from dnastorage.codec.base import *
+from dnastorage.codec.base_codec import BaseCodec
 from dnastorage.codec import base_conversion
 
         

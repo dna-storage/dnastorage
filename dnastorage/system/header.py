@@ -1,12 +1,12 @@
-from dnastorage.codec.base_conversion import convertIntToBytes,convertBytesToInt
-from dnastorage.codec.builder import *
 import editdistance as ed
-#from dnastorage.primer.primer_util import edit_distance
 from io import BytesIO
-from dnastorage.util.packetizedfile import *
 import math
 import struct
-from dnastorage.system.formats import *
+
+from dnastorage.codec.base_conversion import convertIntToBytes,convertBytesToInt
+from dnastorage.codec.builder import customize_RS_CFC8
+from dnastorage.util.packetizedfile import ReadPacketizedFilestream, WritePacketizedFilestream
+import dnastorage.system.formats as formats
 
 ### Designed to fit on a single strand for most use cases
 ### 
@@ -79,7 +79,7 @@ def encode_file_header_comments(filename,format_id,size,other_data,primer5,prime
         comment += "% No filename recorded.\n"
 
     comment += "% 5-{} 3-{}\n".format(primer5,primer3)
-    comment += "% Id-{} Description-{} \n".format(format_id,file_system_format_description(format_id))
+    comment += "% Id-{} Description-{} \n".format(format_id,formats.file_system_format_description(format_id))
     comment += "% {} bytes of additional data \n".format(len(other_data))
     return comment
 
@@ -99,7 +99,7 @@ def encode_file_header(filename,format_id,size,other_data,primer5,primer3,fsmd_a
     #print "size of file header: ",len(data)
     
     pf = ReadPacketizedFilestream(BytesIO(data))
-    enc_func = file_system_encoder_by_abbrev(fsmd_abbrev)
+    enc_func = formats.file_system_encoder_by_abbrev(fsmd_abbrev)
     enc = enc_func(pf,primer5+magic_header,primer3)
     strands = []
     for e in enc:
@@ -149,12 +149,12 @@ def decode_file_header(strands,primer5,primer3,fsmd_abbrev='FSMD'):
 
     b = BytesIO()
 
-    fid = file_system_formatid_by_abbrev(fsmd_abbrev)
-    packetsize = file_system_format_packetsize(fid)
+    fid = formats.file_system_formatid_by_abbrev(fsmd_abbrev)
+    packetsize = formats.file_system_format_packetsize(fid)
 
     pf = WritePacketizedFilestream(b,packetsize,packetsize)
     
-    dec_func = file_system_decoder_by_abbrev(fsmd_abbrev)
+    dec_func = formats.file_system_decoder_by_abbrev(fsmd_abbrev)
     dec = dec_func(pf,primer5+magic_header,primer3)
 
     #d = {}

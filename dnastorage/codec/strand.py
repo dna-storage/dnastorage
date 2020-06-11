@@ -1,8 +1,8 @@
-from dnastorage.codec.base import *
-from dnastorage.exceptions import *
-from dnastorage.codec.reedsolomon.rs import ReedSolomon,get_reed_solomon,ReedSolomonError
 from random import randint
 
+import dnastorage.exceptions as err
+from dnastorage.codec.base_codec import BaseCodec
+from dnastorage.codec.reedsolomon.rs import ReedSolomon,get_reed_solomon,ReedSolomonError
 from dnastorage.util.stats import stats
 
 import logging
@@ -60,7 +60,7 @@ class ReedSolomonInnerCodec(BaseCodec):
             # encoded the message using the RS library
             mesecc = self.rs.rs_encode_msg(message, self._numberECCBytes)
         except ReedSolomonError as e:
-            raise DNACodingError("Error while encoding Reed-Solomon Inner Codec.")
+            raise err.DNACodingError("Error while encoding Reed-Solomon Inner Codec.")
         except ZeroDivisionError as e:
             pass
         
@@ -91,7 +91,7 @@ class ReedSolomonInnerCodec(BaseCodec):
                 pass # nothing to do
             else:
                 print (str(e))
-                raise DNACodingError("RSInnerCodec failed to correct message.")
+                raise err.DNACodingError("RSInnerCodec failed to correct message.")
             # just proceed without further error correction
             pass
         except ZeroDivisionError as e:
@@ -102,6 +102,6 @@ class ReedSolomonInnerCodec(BaseCodec):
                 pass # nothing to do
             else:
                 print (str(e))
-                raise DNACodingError("RSInnerCodec failed to correct message.")
+                raise err.DNACodingError("RSInnerCodec failed to correct message.")
 
         return value

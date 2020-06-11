@@ -1,7 +1,3 @@
-#!/usr/bin/python
-from dnastorage.util.packetizedfile import *
-from dnastorage.codec import base_conversion
-from dnastorage.codec import dense
 from dnastorage.codec.base import BaseCodec
 
 class EncodePacketizedFile(object):
@@ -147,8 +143,9 @@ if __name__ == "__main__":
     import os
     import sys
     from random import randint
-    packetFile = ReadPacketizedFile(sys.argv[1])
-    out = WritePacketizedFile("output.d",packetFile.size,120)
+    from dnastorage.util.packetizedfile import pf
+    packetFile = pf.ReadPacketizedFile(sys.argv[1])
+    out = pf.WritePacketizedFile("output.d",packetFile.size,120)
     assert out.complete==False
     i = 0
     for p in packetFile:

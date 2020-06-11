@@ -1,9 +1,10 @@
-import io
+from io import BytesIO
 import sys
 import logging
 
-from dnastorage.system.formats import *
-from dnastorage.system.header import *
+from dnastorage.util.packetizedfile import ReadPacketizedFilestream, WritePacketizedFilestream
+import dnastorage.system.formats as formats
+import dnastorage.system.header as header
 
 logger = logging.getLogger('dna.storage.system.dnafile')
 logger.addHandler(logging.NullHandler())
@@ -28,14 +29,14 @@ class DNAFile:
                 strands = get_strands(fd)
 
                 if use_flanking_primer_for_decoding==True:
-                    h = decode_file_header(strands,flanking_primer5+primer5,\
+                    h = header.decode_file_header(strands,flanking_primer5+primer5,\
                                        flanking_primer3+primer3,fsmd_abbrev=fsmd_abbrev)
                 else:
-                    h = decode_file_header(strands,primer5,primer3,fsmd_abbrev=fsmd_abbrev)
+                    h = header.decode_file_header(strands,primer5,primer3,fsmd_abbrev=fsmd_abbrev)
             
                 logger.debug("decoded header: {}".format(h)) 
-                assert h['version'][0] <= system_version['major']
-                assert h['version'][1] <= system_version['minor']
+                assert h['version'][0] <= header.system_version['major']
+                assert h['version'][1] <= header.system_version['minor']
             
                 return ReadDNAFile(input=filename, primer5=primer5, primer3=primer3,\
                                    fsmd_abbrev=fsmd_abbrev,\
@@ -117,12 +118,12 @@ class ReadDNAFile(DNAFile):
         # get all the strands ( this will be bad for large files )
         strands = get_strands(self.in_fd)
 
-        h = decode_file_header(strands,self.primer5,self.primer3,fsmd_abbrev=self.fsmd_abbrev)
+        h = header.decode_file_header(strands,self.primer5,self.primer3,fsmd_abbrev=self.fsmd_abbrev)
 
-        self.strands = pick_nonheader_strands(strands,self.primer5)
+        self.strands = header.pick_nonheader_strands(strands,self.primer5)
         
-        assert h['version'][0] <= system_version['major']
-        assert h['version'][1] <= system_version['minor']
+        assert h['version'][0] <= header.system_version['major']
+        assert h['version'][1] <= header.system_version['minor']
 
         self.formatid = h['formatid']
         self.header = h 
@@ -135,11 +136,11 @@ class ReadDNAFile(DNAFile):
             # let sub-classes handle initialization
             return
 
-        dec_func = file_system_decoder(self.formatid)
+        dec_func = formats.file_system_decoder(self.formatid)
             
             
         self.mem_buffer = BytesIO()
-        self.pf = WritePacketizedFilestream(self.mem_buffer,self.size,file_system_format_packetsize(self.formatid))
+        self.pf = WritePacketizedFilestream(self.mem_buffer,self.size,formats.file_system_format_packetsize(self.formatid))
 
         if self.use_flanking_primers:
             self.dec = dec_func(self.pf,self.flanking_primer5+self.primer5,\
@@ -175,11 +176,11 @@ class WriteDNAFile(DNAFile):
     def __init__(self,**kwargs):     
         DNAFile.__init__(self)
         if 'formatid' in kwargs:            
-            enc_func = file_system_encoder(kwargs['formatid'])
+            enc_func = formats.file_system_encoder(kwargs['formatid'])
             self.formatid = kwargs['formatid']
         elif 'format_name' in kwargs:
-            enc_func = file_system_encoder_by_abbrev(kwargs['format_name'])
-            self.formatid = file_system_formatid_by_abbrev(kwargs['format_name'])
+            enc_func = formats.file_system_encoder_by_abbrev(kwargs['format_name'])
+            self.formatid = formats.file_system_formatid_by_abbrev(kwargs['format_name'])
 
         if not ('fsmd_abbrev' in kwargs):
             self.fsmd_abbrev = 'FSMD'
@@ -261,7 +262,7 @@ class WriteDNAFile(DNAFile):
 
     def close(self):
         self.flush()
-        hdr = encode_file_header(self.output_filename,self.formatid,self.size,\
+        hdr = header.encode_file_header(self.output_filename,self.formatid,self.size,\
                                  "",self.flanking_primer5+self.primer5,\
                                  self.flanking_primer3+self.primer3,\
                                  fsmd_abbrev=self.fsmd_abbrev)
@@ -269,7 +270,7 @@ class WriteDNAFile(DNAFile):
         for i,h in enumerate(hdr):
             self.strands.insert(i,h)
 
-        comment = encode_file_header_comments(self.output_filename,self.formatid,self.size,"",\
+        comment = header.encode_file_header_comments(self.output_filename,self.formatid,self.size,"",\
                                               self.primer5,self.primer3)
         self.out_fd.write(comment)
         for s in self.strands:
