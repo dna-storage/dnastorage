@@ -1,4 +1,4 @@
-from dnastorage.codec.base import BaseCodec
+from dnastorage.codec.base_codec import BaseCodec
 
 class EncodePacketizedFile(object):
     """
