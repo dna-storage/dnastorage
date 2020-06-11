@@ -178,7 +178,7 @@ class block_py_tests(unittest.TestCase):
 
 
 from dnastorage.util.packetizedfile import *
-from dnastorage.codec.LayeredCodec import *
+from dnastorage.codec.layered import *
 from dnastorage.codec.block import ReedSolomonOuterCodec
 from dnastorage.codec.strand import ReedSolomonInnerCodec
 from dnastorage.exceptions import *
