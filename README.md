@@ -67,4 +67,6 @@ Then, use pip to install the requirements and packages:
 
 This software is released under the GPLv3 license.
 
+# Acknowledgment
 
+This work was supported in part by the National Science Foundation (Award CNS-1650148).
