@@ -65,7 +65,7 @@ Then, use pip to install the requirements and packages:
    
 # License
 
-This software is released under the GPLv3 license.
+This software is released under the LGPLv3 license.
 
 # Acknowledgment
 
