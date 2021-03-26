@@ -51,7 +51,7 @@ class dnastats:
                 self.fd.write(self.msg+"\n")
                 logger.info(self.msg)
 
-            items = self.all_stats.items()
+            items = [x for x in self.all_stats.items()]
             items.sort()
                 
             for k,v in items:
@@ -62,6 +62,7 @@ class dnastats:
             if len(self.msg) > 0:
                 logger.info(self.msg)
             items = self.all_stats.items()
+            items = [x for x in self.all_stats.items()]
             items.sort()
             for k,v in items:
                 fmt = "{}="+"{}".format(self.formats.get(k,"{}"))

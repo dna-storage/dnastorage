@@ -9,6 +9,9 @@ from dnastorage.codec.block import reportBlockStatus
 
 from dnastorage.util.stats import stats
 
+import logging
+logger = logging.getLogger('dna.storage.codec.LayeredCodec')
+
 class LayeredEncoder(EncodePacketizedFile):
 
     def __init__(self,packetizedFile,minIndex=0,\
@@ -115,6 +118,14 @@ class LayeredDecoder(DecodePacketizedFile):
         self.blockIndexSize = blockIndexSize
         self.intraBlockIndexSize = intraBlockIndexSize
         self._Policy = Policy
+
+        self.strand_errors = 0
+        self.block_errors = 0
+        
+        logger.info("strandSizeInBytes = {}".format(strandSizeInBytes))
+        logger.info("blockSizeInBytes = {}".format(blockSizeInBytes))
+        logger.info("blockIndexSize = {}".format(blockIndexSize))
+        logger.info("intraBlockIndexSize = {}".format(intraBlockIndexSize))
         return
 
 
@@ -123,15 +134,13 @@ class LayeredDecoder(DecodePacketizedFile):
         try:
             phys_s = self.physCodec.decode(phys_strand)
             cw_s = self.physToStrandCodec.decode(phys_s)
-        except err.DNAStorageError as p:
-            cw_s = [-1] + [ 0 for _ in range(self.strandSizeInBytes-1) ]
-            return cw_s
-        
-        try:
             s = self.strandCodec.decode(cw_s)
+            stats.inc("LayeredDecoder::phys_to_strand::succeeded")
         except err.DNAStorageError as p:
+            stats.inc("LayeredDecoder::phys_to_strand::failed")
             s = [-1] + [ 0 for _ in range(self.strandSizeInBytes-1) ]
-        
+            self.strand_errors += 1
+                
         return s
 
     def decode_from_phys_to_strand(self, s):
@@ -187,19 +196,24 @@ class LayeredDecoder(DecodePacketizedFile):
                 self.writeToFile(b_noecc[0],b_noecc[1])
 
             except err.DNAStorageError as e:
+                self.block_errors += 1
                 if self._Policy.allow(e):
                     continue                
                 else:
                     raise e
             except Exception as e:
-                print (str(e))
+                print("LayeredCodec._attempt_final_decoding caught error: "+str(e))
+                self.block_errors += 1
                 print (b)
                 
             
     def write(self):
         self._attempt_final_decoding()
         super(LayeredDecoder,self).write()
-            
+
+    def only_write(self):
+        super(LayeredDecoder,self).write()
+
     def dummy_write(self):
         self._attempt_final_decoding()
         return self._packetizedFile.dummy_write()

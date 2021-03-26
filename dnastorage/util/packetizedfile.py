@@ -77,6 +77,8 @@ received in any order. But, the file cannot be written until the file is complet
                 missing.append(i)
         return missing
 
+    def hasMissingKeys(self):
+        return len(self.getMissingKeys()) > 0
 
     ## Warning: requires buffering the whole file!
     def write(self):

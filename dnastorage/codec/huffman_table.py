@@ -3,7 +3,6 @@
 from dnastorage.codec.base_codec import BaseCodec
 from dnastorage.codec import base_conversion
 
-        
 class HuffmanTableBase:
     
     class Node:
@@ -17,13 +16,20 @@ class HuffmanTableBase:
                 self.weight = -1.0
             elif weight==None:
                 self.weight = sum([ x.weight for x in childlist]) 
-                
-        def __cmp__(self, other):
-            assert False
-            return cmp(self.weight, other.weight)
+               
         def __lt__(self, other):
             return self.weight < other.weight
-        
+        def __le__(self, other):
+            return self.weight <= other.weight
+        def __gt__(self, other):
+            return self.weight > other.weight
+        def __ge__(self, other):
+            return self.weight >= other.weight
+        def __eq__(self,other):
+            return self.weight == other.weight
+        def __ne__(self,other):
+            return self.weight != other.weight
+                        
         def dec(self,val,symLut):
             #print val[0],symLut,self.enc,self.symbol,symLut,self._childlist
             if self.symbol != None:
@@ -122,9 +128,9 @@ class HuffmanTableBase:
             #print self._weights
             assert len(self._symbols) == len(self._weights)
             for s,w in zip(self._symbols,self._weights):
-                n = HuffmanTableBase.Node(nbase,s,w)
+                n = HuffmanTableBase.Node(nbase,s,weight=w)
                 self._nodes.append( n )
-            self._nodes.sort()
+            self._nodes.sort(key=lambda n: n.weight)
         else:
             self.root = HuffmanTableBase.Node(self._nbase,None,None,[])
 
@@ -141,7 +147,7 @@ class HuffmanTableBase:
 
     @classmethod
     def from_raw_table(cls, table, nbase, base_syms, prevent_ones=False):
-        ht = cls(nbase,base_syms,None,None)
+        ht = cls(nbase,base_syms,None,prevent_ones=prevent_ones)
         i = 0
         prev_l = table[0][0]
         for l,val in table:
@@ -205,7 +211,7 @@ class HuffmanTableBase:
         _queue = []
         for n in self._nodes:
             _queue.append( n )
-        _queue.sort()
+        _queue.sort(key=lambda n: n.weight)
 
         if len(_queue)==1:
             nodes = []
@@ -224,7 +230,7 @@ class HuffmanTableBase:
                 _queue.append(new)
                 # Note, this is ineffecient.  We should replace this dumb sort
                 # with something more efficient like a min-heap
-                _queue.sort()
+                _queue.sort(key=lambda n: n.weight)
 
         assert len(_queue) == 1
         r = _queue[0]
@@ -282,22 +288,22 @@ class LengthLimitedHuffmanTable(HuffmanTableBase):
     def __init__(self, L, nbase, base_syms, symbols, weights=None,prevent_ones=False):
         assert nbase==2
         assert nbase**L >= len(symbols)
-        HuffmanTableBase.__init__(self,nbase,base_syms,symbols,weights,prevent_ones)
+        HuffmanTableBase.__init__(self,nbase,base_syms,symbols,weights=weights,prevent_ones=prevent_ones)
         self._original_nodes = self._nodes[:]
         merge = []
         new_nodes = []
         for _ in range(L,0,-1):            
             merge = new_nodes + self._nodes[:]
             #print "L = {}".format(_)
-            merge.sort()
-            even = len(merge)/2*2
+            merge.sort(key = lambda n: n.weight)
+            even = len(merge)//2*2
             # drop last packet if length of merge is odd
             package = [ [merge[i],merge[i+1]] for i in range(0,even,2) ] 
             new_nodes = []
             for p in package:
-                new = HuffmanTable.Node(self._nbase,None,None,p)
+                new = HuffmanTable.Node(self._nbase,None,weight=None,childlist=p)
                 new_nodes.append(new)        
-        merge.sort()
+        merge.sort(key = lambda n: n.weight)
         code_length = []
         # adjust the weights based on code lengths
         for n in self._nodes:
