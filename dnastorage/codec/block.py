@@ -1,6 +1,7 @@
 from math import log, ceil
 from collections import Counter
 
+from dnastorage.exceptions import *
 from dnastorage.codec.base_codec import *
 from dnastorage.codec import base_conversion
 from dnastorage.codec.reedsolomon.rs import ReedSolomon,get_reed_solomon,ReedSolomonError
