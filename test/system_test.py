@@ -53,7 +53,7 @@ from dnastorage.codec.base_conversion import convertIntToBytes, convertBytesToIn
 class segmentedfile_py_test(unittest.TestCase):
     """ test stats. """
     def test_dnafile(self):
-        wf = SegmentedWriteDNAFile(primer3='T'*19+'G',primer5='A'*19+'G',format_name='RS+CFC8+RE1',output="out.dna",fsmd_abbrev='FSMD-1')    
+        wf = SegmentedWriteDNAFile(primer3='T'*19+'G',primer5='A'*19+'G',format_name='RS+CFC8+RE1',output="out.dna",fsmd_abbrev='FSMD-1',reverse_primer3_from_seq=False)    
         #for i in range(1000):
         #    wf.write( bytes([x for x in convertIntToBytes(i,4)]) )
         wf.new_segment('RS+CFC8+RE2','AT'+'A'*17+'G','TA'+'T'*17+'G')        

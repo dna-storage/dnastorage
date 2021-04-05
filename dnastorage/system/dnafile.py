@@ -466,6 +466,8 @@ class SegmentedReadDNAFile(ReadDNAFile):
 
         if 'reverse_primer3_from_seq' in kwargs:
             self.reverse_primer3_from_seq = kwargs['reverse_primer3_from_seq']
+        else:
+            self.reverse_primer3_from_seq = False
         
         logger.debug("sizeof other_data = {}".format(len(self.header['other_data'])))
         
