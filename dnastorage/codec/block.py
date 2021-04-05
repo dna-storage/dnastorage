@@ -17,9 +17,13 @@ def reportBlockStatus(blocks,bindex,interIndexSize,intraIndexSize):
     global block_count
     for j,b in enumerate(blocks):
         block_count+=1
-        contents = [ '_' for i in range(255) ]
+        contents = [ '_' for i in range(256) ]
         for s in b[1]:
             intra = base_conversion.convertBytesToInt(s[interIndexSize:interIndexSize+intraIndexSize])
+            if intra == -1:
+                continue
+            logger.debug("intra = {}".format(intra))
+            assert intra >=0 and intra <= 255
             contents[intra] = '*'        
         stats["reportBlockStatus({})::block_size({}<{}>)".format(bindex,b[0],block_count)] = len(b[1])
         stats["reportBlockStatus({})::block_profile({}<{}>)".format(bindex,b[0],block_count)] = "".join(contents)

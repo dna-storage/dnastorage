@@ -21,7 +21,7 @@ class DNAFile:
         return
 
     @classmethod
-    def open(self, filename, op, primer5, primer3, format_name="", write_incomplete_file=False, fsmd_abbrev='FSMD',flanking_primer5="",flanking_primer3="",use_flanking_primer_for_decoding=False,use_single_primer=False,preview_mode=False):
+    def open(self, filename, op, primer5, primer3, format_name="", write_incomplete_file=False, fsmd_abbrev='FSMD',flanking_primer5="",flanking_primer3="",use_flanking_primer_for_decoding=False,use_single_primer=False,preview_mode=False,reverse_primer3_from_seq=False):
         '''        
         1. filename is the input file of strands
         2. op is the file operation: 'r' or 'w'
@@ -54,9 +54,10 @@ class DNAFile:
                                                 flanking_primer5=flanking_primer5,\
                                                 flanking_primer3=flanking_primer3,\
                                                 use_flanking_primer_for_decoding=use_flanking_primer_for_decoding,\
-                                                use_single_primer=use_single_primer,
+                                                use_single_primer=use_single_primer,\
                                                 header=h,\
-                                                preview_mode=preview_mode)
+                                                preview_mode=preview_mode,\
+                                                reverse_primer3_from_seq=reverse_primer3_from_seq)
                 else:
                     return ReadDNAFile(input=filename, primer5=primer5, primer3=primer3,\
                                        fsmd_abbrev=fsmd_abbrev,\
@@ -445,8 +446,8 @@ class SegmentedReadDNAFile(ReadDNAFile):
             pos += p
             primer3,p = header.decode_primer_diff(val[pos:], self.primer3)
 
-            #if i > 0:
-            #    primer3 = reverse_complement(primer3)
+            if i > 0 and self.reverse_primer3_from_seq:
+                primer3 = reverse_complement(primer3)
                 
             pos += p
             seg.append(primer5)
@@ -463,6 +464,9 @@ class SegmentedReadDNAFile(ReadDNAFile):
     def __init__(self,**kwargs):     
         ReadDNAFile.__init__(self,**kwargs)
 
+        if 'reverse_primer3_from_seq' in kwargs:
+            self.reverse_primer3_from_seq = kwargs['reverse_primer3_from_seq']
+        
         logger.debug("sizeof other_data = {}".format(len(self.header['other_data'])))
         
         if len(self.header['other_data'])==0:
