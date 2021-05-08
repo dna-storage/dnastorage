@@ -87,7 +87,8 @@ class ReedSolomonInnerCodec(BaseCodec):
             stats.inc("RSInnerCodec.ReedSolomonError")
             if self._Policy.allow(e):
                 # leave erasures, may be helpful for outer decoder
-                value = message[0:(self._numberECCBytes)]
+                #value = message[0:(self._numberECCBytes)]
+                value = [-1 for _ in range(len(array))]
                 pass # nothing to do
             else:
                 print (str(e))
@@ -98,7 +99,8 @@ class ReedSolomonInnerCodec(BaseCodec):
             stats.inc("RSInnerCodec.ZeroDivision")
             if self._Policy.allow(e):
                 # leave erasures, may be helpful for outer decoder
-                value = message[0:(self._numberECCBytes)]
+                #value = message[0:(self._numberECCBytes)]
+                value = [-1 for _ in range(len(array))]                
                 pass # nothing to do
             else:
                 print (str(e))

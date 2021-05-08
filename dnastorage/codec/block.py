@@ -22,7 +22,7 @@ def reportBlockStatus(blocks,bindex,interIndexSize,intraIndexSize):
             intra = base_conversion.convertBytesToInt(s[interIndexSize:interIndexSize+intraIndexSize])
             if intra == -1:
                 continue
-            logger.debug("intra = {}".format(intra))
+            #logger.debug("intra = {}".format(intra))
             assert intra >=0 and intra <= 255
             contents[intra] = '*'        
         stats["reportBlockStatus({})::block_size({}<{}>)".format(bindex,b[0],block_count)] = len(b[1])
@@ -368,21 +368,21 @@ class ReedSolomonOuterCodec(BaseCodec):
                 #print corrected_message
                 #print corrected_ecc
                 data[i:len(data):self._payloadSize] = corrected_message + corrected_ecc
-                stats.inc("RSOuterCodec::correct")
+                stats.inc("RSOuterCodec::correct_row")
             except ReedSolomonError as e:
                 #print "couldn't correct block {}".format(message)
                 stats.inc("RSOuterCodec::ReedSolomonError")
                 # wrap exception into a library specific one when checking policy:
                 wr_e = DNAReedSolomonOuterCodeError(msg=\
                              "RSOuterCodec found error at index={}".format(packet[0]))
-                if self._Policy.allow(wr_e):
-                    # fix -1
-                    corrected_message = [ max(0,_) for _ in message ]
-                    data[i:len(data):self._payloadSize] = corrected_message
-                    pass # nothing to do
-                else:
+                #if self._Policy.allow(wr_e):
+                #    # fix -1
+                #    corrected_message = [ max(0,_) for _ in message ]
+                #    data[i:len(data):self._payloadSize] = corrected_message
+                #    pass # nothing to do
+                #else:
                     # policy doesn't allow handling, raise exception
-                    raise wr_e
+                raise wr_e
                 # just proceed without further error correction
                 pass
             except Exception as e:
@@ -391,6 +391,8 @@ class ReedSolomonOuterCodec(BaseCodec):
                 else:
                     raise e
 
+        stats.inc("RSOuterCodec::fully_correct")
+        stats.inc("RSOuterCodec::correct[{}]".format(str(packet[0])))                
         # discard outer correction codes
         data = data[0:len(data)-self._errorSymbols*self._payloadSize]        
         return packet[0],data

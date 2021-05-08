@@ -8,6 +8,10 @@ from dnastorage.codec.builder import customize_RS_CFC8
 from dnastorage.util.packetizedfile import ReadPacketizedFilestream, WritePacketizedFilestream
 import dnastorage.system.formats as formats
 
+import logging
+logger = logging.getLogger("dna.storage.system.header")
+
+
 ### Designed to fit on a single strand for most use cases
 ### 
 ### Every header strand begins with special sequence that can't be used at the beginning of indices: ATCGATGC
@@ -133,12 +137,13 @@ def pick_header_strands(strands,primer5):
         elif s.find(primer5)!=-1:
             plen= s.find(primer5)+len(primer5)
             possible_hdr = s[plen:plen+len(magic_header)]
-            #if ed.eval(possible_hdr,magic_header) < 2:
-            #    print "guessed at header!"
+            if ed.eval(possible_hdr,magic_header) < 2:
                 #ss = s[:]
                 #ss[plen:plen+len(magic_header)] = magic_header
-            #    picks.append(s)
-            #else:
+                picks.append(s)
+            else:
+                others.append(s)
+        else:
             others.append(s)
 
     return picks,others
@@ -156,27 +161,16 @@ def decode_file_header(strands,primer5,primer3,fsmd_abbrev='FSMD'):
     
     dec_func = formats.file_system_decoder_by_abbrev(fsmd_abbrev)
     dec = dec_func(pf,primer5+magic_header,primer3)
-
-    #d = {}
+    
     for s in picks:
-        #tmp = dec.decode_from_phys_to_strand(s)
-        #d[tmp[0]] = d.get(tmp[0],[])
-        #d[tmp[0]].append(tmp)
-        #print len(tmp),tmp
         dec.decode(s)
-
-    #print d
-
+        
     dec.write()
     assert dec.complete    
 
-    #print (b.getvalue())
-    try:
-        data = [ ord(x) for x in b.getvalue() ]
-    except Exception as e:
-        data = [ x for x in b.getvalue() ]
+    data = [ x for x in b.getvalue() ]
         
-    #print data
+    logger.info("data = "+"".join(["{:x} ".format(x) for x in data]))
     
     assert data[0] == system_version['major']
     assert data[1] == system_version['minor']

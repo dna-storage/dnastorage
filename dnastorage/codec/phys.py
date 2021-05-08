@@ -1,8 +1,11 @@
 import random
 import editdistance as ed
+from difflib import SequenceMatcher
+
 
 import dnastorage.exceptions as err
 from dnastorage.codec.base_codec import BaseCodec
+from dnastorage.util.stats import *
 
 class CombineCodewords(BaseCodec):
     def __init__(self,CodecObj=None,Policy=None):
@@ -41,7 +44,7 @@ class InsertMidSequence(BaseCodec):
     def __init__(self,seq,CodecObj=None,Policy=None):
         BaseCodec.__init__(self,CodecObj=CodecObj,Policy=Policy)
         self._seq = seq
-
+        
     def _encode(self,strand):
         if strand.find(self._seq) != -1:
             e = err.DNAStrandPoorlyFormed("Found sequence already present while prepending {}"\
@@ -53,10 +56,11 @@ class InsertMidSequence(BaseCodec):
 
         middle = int(len(strand)/2)
         return strand[0:middle]+self._seq+strand[middle:]
-
+    
     def _decode(self,strand):
         index = strand.find(self._seq)
         if index != -1:
+            stats.inc("phys::InsertMidSequence::decode::found")
             return strand[0:index]+strand[index+len(self._seq):]
         else:
             er = err.DNAStrandMissingSequence("{} should have had {} inside it.".format(strand,self._seq))
@@ -72,11 +76,14 @@ class InsertMidSequence(BaseCodec):
                 mn = min(res)
                 if mn < slen/3:
                     place = middle - slen + res.index(mn)
+                    stats.inc("phys::InsertMidSequence::decode::foundNearby")
                     return strand[0:place]+strand[place+slen:]
                 else:
                     # just leave the strand along, and hopefully codewords can
                     # still be extracted properly
-                    return strand
+                    #return strand
+                    stats.inc("phys::InsertMidSequence::decode::missing")
+                    raise er
             else:
                 raise er
 
@@ -87,6 +94,16 @@ class PrependSequence(BaseCodec):
         self._seq = seq[:]
         self.is_primer = isPrimer
 
+    def _makeCutGuess(self,strand):
+        diff = SequenceMatcher(lambda x: False, strand, self._seq)
+        match = diff.find_longest_match(0,min(50,len(strand)),0,len(self._seq))
+        if match is not None:
+            cut = (len(self._seq)-match.b)+match.a
+            return cut,match
+        else:
+            return None, None
+
+        
     def _encode(self,strand):
         if strand.find(self._seq) != -1:
             er = err.DNAStrandPoorlyFormed("Found sequence already present while prepending {}"\
@@ -100,6 +117,7 @@ class PrependSequence(BaseCodec):
     def _decode(self,strand):
         index = strand.find(self._seq)
         if index != -1: # expected at beginning
+            stats.inc("phys::PrependSequence::decode::found")
             return strand[index+len(self._seq):]
         else:
             er = err.DNAStrandMissingSequence("{} should have had {} at beginning.".format(strand,self._seq))
@@ -108,22 +126,19 @@ class PrependSequence(BaseCodec):
             if self._Policy.allow(er):
                 slen = len(self._seq)
                 res = []
-                # FIXME: how far in should we look?
-                for m in range(0,50):
-                    sli = strand[m:m+slen]
-                    res.append( ed.eval(sli,self._seq) )
-                mn = min(res)
+
+                cut,match = self._makeCutGuess(strand)
                 
-                idx = res.index(mn)
-                #print (res,mn)
-                if mn < 5:
-                    return strand[idx+slen:]
-                else:
+                if cut != None and match.size > 8:
+                    stats.inc("phys::PrependSequence::decode::foundNearby")
+                    return strand[cut:]
+                else:                    
                     if self.is_primer:
+                        stats.inc("phys::PrependSequence::decode::missingPrimer")
                         raise err.DNAMissingPrimer("Missing primer {}".format(self._seq))
-                    # just leave the strand along, and hopefully codewords can
-                    # still be extracted properly
-                    return strand
+                    else:
+                        stats.inc("phys::PrependSequence::decode::missingPrependSequence")
+                    return strand[len(self._seq):]                        
             else:
                 raise er
 
@@ -134,6 +149,15 @@ class AppendSequence(BaseCodec):
         self._seq = seq
         self.is_primer = isPrimer
 
+    def _makeCutGuess(self,strand):
+        diff = SequenceMatcher(lambda x: False, strand, self._seq)
+        match = diff.find_longest_match(len(strand)-50,len(strand),0,20)
+        if match is not None:
+            cut = match.a - match.b
+            return cut,match
+        else:
+            return None, None
+        
     def _encode(self,strand):
         if strand.find(self._seq) != -1:
             er = err.DNAStrandPoorlyFormed("Found sequence already present while appending {}"\
@@ -149,6 +173,7 @@ class AppendSequence(BaseCodec):
         index = strand.find(self._seq)
         slen = len(self._seq)
         if index != -1: # expected at end
+            stats.inc("phys::AppendSequence::decode::found")
             return strand[:index]
         else:
             er = err.DNAStrandMissingSequence("{} should have had {} at end.".format(strand,self._seq))
@@ -157,19 +182,21 @@ class AppendSequence(BaseCodec):
             if self._Policy.allow(er):
                 slen = len(self._seq)
                 res = []
-                for m in range(len(strand)-2*slen,len(strand)):
-                    sli = strand[m:m+slen]
-                    res.append( ed.eval(sli,self._seq) )
-                mn = min(res)
-                idx = res.index(mn)
-                if mn < 5:
-                    return strand[:idx+len(strand)-2*slen]
+
+                cut,match = self._makeCutGuess(strand)
+                if cut!=None and match.size > 10:
+                    stats.inc("phys::AppendSequence::decode::foundNearby")
+                    return strand[0:cut]
                 else:
                     if self.is_primer:
+                        stats.inc("phys::AppendSequence::decode::missingPrimer")
                         raise err.DNAMissingPrimer("Missing primer".format(self._seq))
+                    else:
+                        stats.inc("phys::AppendSequence::decode::missingAppendSequence")
+                        
                     # just leave the strand along, and hopefully codewords can
-                    # still be extracted properly
-                    return strand
+                    # still be extracted properly                    
+                    return strand[:-len(self._seq)]
             else:
                 raise er
 
