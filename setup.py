@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dnastorage", 
-    version="0.9.4",
+    version="0.9.5",
     author="James M. Tuck",
     author_email="james.m.tuck@gmail.com",
     description="dnastorage provides basic support for encoding and decoding files into and out of DNA with several convenient interfaces.",
