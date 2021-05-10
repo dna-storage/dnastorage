@@ -69,4 +69,4 @@ This software is released under the LGPLv3 license.
 
 # Acknowledgment
 
-This work was supported in part by the National Science Foundation (Award CNS-1650148).
+This work was supported by the National Science Foundation (Grants CNS-1650148, CNS-1901324, ECCS 2027655) and a North Carolina State University Research and Innovation Seed Funding Award (Grant 1402-2018-2509).
