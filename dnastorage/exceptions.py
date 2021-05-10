@@ -48,7 +48,6 @@ class DNACodingError(DNAStorageError):
         super(DNACodingError,self).__init__(msg)
         stats.inc("CodingError")
 
-
 class DNAReedSolomonOuterCodeError(DNACodingError):
     """ An error occured while encoding or decoding a file """
     def __init__(self,msg=None):
@@ -89,7 +88,6 @@ class DNABlockPayloadWrongSize(DNACodingError):
             msg = "Strand in the block was the wrong size."
         super(DNABlockPayloadWrongSize,self).__init__(msg)
         stats.inc("BlockPayloadWrongSize")
-
 
 class DNABadCodeword(DNACodingError):
     """ An error occured while decoding a codeword symbol """

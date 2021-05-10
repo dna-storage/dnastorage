@@ -79,9 +79,8 @@ class InsertMidSequence(BaseCodec):
                     stats.inc("phys::InsertMidSequence::decode::foundNearby")
                     return strand[0:place]+strand[place+slen:]
                 else:
-                    # just leave the strand along, and hopefully codewords can
-                    # still be extracted properly
-                    #return strand
+                    # raise error and discard, such a high distance means
+                    # that it's unlikely a strand we want
                     stats.inc("phys::InsertMidSequence::decode::missing")
                     raise er
             else:
@@ -126,23 +125,28 @@ class PrependSequence(BaseCodec):
             if self._Policy.allow(er):
                 slen = len(self._seq)
                 res = []
-
-                cut,match = self._makeCutGuess(strand)
-                
-                if cut != None and match.size > 8:
+                for m in range(0,50):
+                    sli = strand[m:m+slen]
+                    res.append( ed.eval(sli,self._seq) )
+                mn = min(res)
+                idx = res.index(mn)
+                # To do: make this distance configurable
+                if mn < 5:
                     stats.inc("phys::PrependSequence::decode::foundNearby")
-                    return strand[cut:]
-                else:                    
+                    return strand[idx+slen:]
+                else:
                     if self.is_primer:
                         stats.inc("phys::PrependSequence::decode::missingPrimer")
                         raise err.DNAMissingPrimer("Missing primer {}".format(self._seq))
                     else:
                         stats.inc("phys::PrependSequence::decode::missingPrependSequence")
-                    return strand[len(self._seq):]                        
+                    # just leave the strand along, and hopefully codewords can
+                    # still be extracted properly
+                    #return strand
+                    return strand[len(self._seq):]
             else:
                 raise er
-
-
+            
 class AppendSequence(BaseCodec):
     def __init__(self,seq,CodecObj=None,Policy=None,isPrimer=False):
         BaseCodec.__init__(self,CodecObj=CodecObj,Policy=Policy)
@@ -183,10 +187,15 @@ class AppendSequence(BaseCodec):
                 slen = len(self._seq)
                 res = []
 
-                cut,match = self._makeCutGuess(strand)
-                if cut!=None and match.size > 10:
+                for m in range(len(strand)-2*slen,len(strand)):
+                    sli = strand[m:m+slen]
+                    res.append( ed.eval(sli,self._seq) )
+                mn = min(res)
+                idx = res.index(mn)
+                # To do: make this distance configurable
+                if mn < 5:
                     stats.inc("phys::AppendSequence::decode::foundNearby")
-                    return strand[0:cut]
+                    return strand[:idx+len(strand)-2*slen]
                 else:
                     if self.is_primer:
                         stats.inc("phys::AppendSequence::decode::missingPrimer")
